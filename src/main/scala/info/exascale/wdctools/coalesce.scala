@@ -1,11 +1,11 @@
-package info.exascale.feedTransform
+package info.exascale.wdctools
 
 import org.apache.spark.{SparkConf, SparkContext, sql}
 
 object coalesce {
   def main(args: Array[String]) {
     val conf = new SparkConf()
-      .setAppName("Coalesce4k")
+      .setAppName("Coalesce1k")
       .set("spark.sql.parquet.compression.codec", "snappy")
     val sc = new SparkContext(conf)
 

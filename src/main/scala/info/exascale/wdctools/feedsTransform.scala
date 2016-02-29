@@ -1,4 +1,4 @@
-package info.exascale.feedTransform
+package info.exascale.wdctools
 
 import com.netaporter.uri.Uri
 import org.apache.spark.{SparkConf, SparkContext, sql}
