@@ -3,6 +3,12 @@ assembly:
 run:
 	spark-submit \
 	--master yarn-master \
+	--deploy-mode client \
+	--num-executors 20 \
+	--executor-cores 2 \
+	--driver-memory 4g \
+	--executor-memory 3g \
+	--conf spark.yarn.executor.memoryOverhead=1024 \
 	--conf spark.ui.port=$(shuf -i 2000-65000 -n 1) \
 	--class "feedsTransform" \
 	target/scala-2.10/feedTransform-assembly-1.0.jar
