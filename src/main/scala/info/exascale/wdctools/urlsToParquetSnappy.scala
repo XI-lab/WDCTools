@@ -1,5 +1,6 @@
 package info.exascale.wdctools
 
+import org.apache.spark.sql.types.{StringType, StructType, StructField}
 import org.apache.spark.{SparkConf, SparkContext, sql}
 import scala.language.postfixOps
 
@@ -10,11 +11,15 @@ object urlsToParquetSnappy {
       .set("spark.sql.parquet.compression.codec", "snappy")
     val sc = new SparkContext(conf)
 
+
+    val urlSchema = StructType(Array(StructField("page", StringType, true)))
+
     val sqlContext = new sql.SQLContext(sc)
     val df = sqlContext
       .read
       .format("com.databricks.spark.csv")
       .option("header", "false")
+      .schema(urlSchema)
       .load("/user/atonon/WDC_112015/data/urls/*.csv.gz")
 
     df
