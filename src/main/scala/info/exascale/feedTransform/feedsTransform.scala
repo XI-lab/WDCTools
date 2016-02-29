@@ -13,7 +13,7 @@ object feedsTransform {
     val sc = new SparkContext(conf)
 
     val sqlContext = new sql.SQLContext(sc)
-    val df = sqlContext.read.parquet("/user/vfelder/feeds/feeds.parquet/")
+    val df = sqlContext.read.parquet("/user/vfelder/feeds/feedscoalesced.parquet/")
 
     val hostnamePattern = "((\\/\\/|https\\:\\/\\/|http\\:\\/\\/)([^\\/\\:]+))"r
 
@@ -81,5 +81,4 @@ object feedsTransform {
       .withColumn("title", sqlGetTitle(col("tag")))
       .write.parquet("/user/vfelder/feeds/feedsparsed.parquet/")
   }
-
 }
