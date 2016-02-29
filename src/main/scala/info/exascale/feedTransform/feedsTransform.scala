@@ -7,7 +7,9 @@ import scala.language.postfixOps
 
 object feedsTransform {
   def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("RecreateWithHostname")
+    val conf = new SparkConf()
+      .setAppName("RecreateWithHostname")
+      .set("spark.io.compression.codec", "snappy")
     val sc = new SparkContext(conf)
 
     val sqlContext = new sql.SQLContext(sc)
