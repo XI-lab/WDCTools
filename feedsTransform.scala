@@ -4,7 +4,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql
 import org.apache.spark.sql.functions._
 
-object NewParquetWithHostname {
+object feedsTransform {
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("RecreateWithHostname")
     val sc = new SparkContext(conf)
