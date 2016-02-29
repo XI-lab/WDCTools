@@ -1,7 +1,7 @@
 assembly:
 	sbt assembly
 
-transform:
+feedtransform:
 	spark-submit \
 	--master yarn-master \
 	--deploy-mode client \
@@ -27,7 +27,21 @@ transform:
 # 	--class "info.exascale.wdctools.coalesce" \
 # 	target/scala-2.10/wdctools-assembly-1.0.jar
 
-urls:
+# urls:
+# 	spark-submit \
+# 	--master yarn-master \
+# 	--deploy-mode client \
+# 	--num-executors 20 \
+# 	--executor-cores 2 \
+# 	--driver-memory 4g \
+# 	--executor-memory 3g \
+# 	--conf spark.yarn.executor.memoryOverhead=1024 \
+# 	--conf spark.ui.port=13340 \
+# 	--class "info.exascale.wdctools.urlsToParquetSnappy" \
+# 	--packages com.databricks:spark-csv_2.10:1.3.0 \
+# 	target/scala-2.10/wdctools-assembly-1.0.jar
+
+urltransform:
 	spark-submit \
 	--master yarn-master \
 	--deploy-mode client \
@@ -36,7 +50,6 @@ urls:
 	--driver-memory 4g \
 	--executor-memory 3g \
 	--conf spark.yarn.executor.memoryOverhead=1024 \
-	--conf spark.ui.port=13340 \
-	--class "info.exascale.wdctools.urlsToParquetSnappy" \
-	--packages com.databricks:spark-csv_2.10:1.3.0 \
+	--conf spark.ui.port=13341 \
+	--class "info.exascale.wdctools.urlsTransform" \
 	target/scala-2.10/wdctools-assembly-1.0.jar

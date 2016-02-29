@@ -1,7 +1,6 @@
 package info.exascale.wdctools
 
 import org.apache.spark.{SparkConf, SparkContext, sql}
-import org.apache.spark.sql.functions._
 import scala.language.postfixOps
 
 object urlsToParquetSnappy {

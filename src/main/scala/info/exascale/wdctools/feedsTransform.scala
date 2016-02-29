@@ -42,31 +42,28 @@ object feedsTransform {
       }
     }
 
-    val relPattern = """rel=["']?([^'"]*)["']?""".r
+    val relPattern = """.*rel=["']?([^'"]*)["']?.*""".r
     val getRel: (String => String) = (tag: String) => {
-      val rel = relPattern findFirstIn tag
-      if (rel.isEmpty)
-        ""
-      else
-        rel.get
+      tag match {
+        case relPattern(captured) => captured
+        case _ => ""
+      }
     }
 
-    val hrefPattern = """href=["']?([^'"]*)["']?""".r
+    val hrefPattern = """.*href=["']?([^'"]*)["']?.*""".r
     val getHref: (String => String) = (tag: String) => {
-      val href = hrefPattern findFirstIn tag
-      if (href.isEmpty)
-        ""
-      else
-        href.get
+      tag match {
+        case hrefPattern(captured) => captured
+        case _ => ""
+      }
     }
 
-    val titlePattern = """title=["']?([^'"]*)["']?""".r
+    val titlePattern = """.*title=["']?([^'"]*)["']?.*""".r
     val getTitle: (String => String) = (tag: String) => {
-      val title = titlePattern findFirstIn tag
-      if (title.isEmpty)
-        ""
-      else
-        title.get
+      tag match {
+        case titlePattern(captured) => captured
+        case _ => ""
+      }
     }
 
     val sqlGetHost = udf(getHost)
