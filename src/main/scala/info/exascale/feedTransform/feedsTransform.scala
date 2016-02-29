@@ -1,7 +1,7 @@
+package info.exascale.feedTransform
+
 import com.netaporter.uri.Uri
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkConf
-import org.apache.spark.sql
+import org.apache.spark.{SparkConf, SparkContext, sql}
 import org.apache.spark.sql.functions._
 
 object feedsTransform {
@@ -10,11 +10,14 @@ object feedsTransform {
     val sc = new SparkContext(conf)
 
     val sqlContext = new sql.SQLContext(sc)
-    val df = sqlContext.parquetFile("/user/vfelder/feeds/feeds.parquet/")
+    val df = sqlContext.read.parquet("/user/vfelder/feeds/feeds.parquet/")
 
     val getHost: (String => String) = (page: String) => {
-      val uri = Uri.parse(page)
-      uri.host.toString
+      val host = Uri.parse(page).host
+      if (host.isEmpty)
+        ""
+      else
+        host.get
     }
 
     val relPattern = """rel=["']?([^'"]*)["']?""".r
@@ -54,7 +57,7 @@ object feedsTransform {
       .withColumn("rel", sqlGetRel(col("tag")))
       .withColumn("href", sqlGetHref(col("tag")))
       .withColumn("title", sqlGetTitle(col("tag")))
-      .saveAsParquetFile("/user/vfelder/feeds/feedsparsed.parquet/")
+      .write.parquet("/user/vfelder/feeds/feedsparsed.parquet/")
   }
 
 }
