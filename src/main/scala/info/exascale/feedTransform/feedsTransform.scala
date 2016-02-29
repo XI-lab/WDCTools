@@ -3,6 +3,7 @@ package info.exascale.feedTransform
 import com.netaporter.uri.Uri
 import org.apache.spark.{SparkConf, SparkContext, sql}
 import org.apache.spark.sql.functions._
+import scala.language.postfixOps
 
 object feedsTransform {
   def main(args: Array[String]) {
@@ -12,12 +13,31 @@ object feedsTransform {
     val sqlContext = new sql.SQLContext(sc)
     val df = sqlContext.read.parquet("/user/vfelder/feeds/feeds.parquet/")
 
+    val hostnamePattern = "((\\/\\/|https\\:\\/\\/|http\\:\\/\\/)([^\\/\\:]+))"r
+
     val getHost: (String => String) = (page: String) => {
-      val host = Uri.parse(page).host
-      if (host.isEmpty)
+      val preFiltered = hostnamePattern findFirstIn page
+      if (preFiltered.isEmpty) {
+        println(s"prefiltering failed: $page")
         ""
-      else
-        host.get
+      } else {
+        val prefilteredString = preFiltered.get
+        try {
+          val host = Uri.parse(prefilteredString).host
+          if (host.isEmpty) {
+            println(s"parsing failed: $page prefiltered as: $prefilteredString")
+            ""
+          } else {
+            host.get
+          }
+        } catch {
+          case e: Throwable => {
+            val exception = e.toString
+            println(s"caught $exception")
+            ""
+          }
+        }
+      }
     }
 
     val relPattern = """rel=["']?([^'"]*)["']?""".r
