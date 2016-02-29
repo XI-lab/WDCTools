@@ -9,6 +9,6 @@ run:
 	--driver-memory 4g \
 	--executor-memory 3g \
 	--conf spark.yarn.executor.memoryOverhead=1024 \
-	--conf spark.ui.port=$(shuf -i 2000-65000 -n 1) \
-	--class "feedsTransform" \
+	--conf spark.ui.port=13338 \
+	--class "info.exascale.feedTransform.feedsTransform" \
 	target/scala-2.10/feedTransform-assembly-1.0.jar
