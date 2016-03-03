@@ -2,7 +2,6 @@ assembly:
 	sbt assembly
 
 feedtransform:
-	echo done && exit && \
 	spark-submit \
 	--master yarn-master \
 	--deploy-mode client \
@@ -59,6 +58,7 @@ urltransform:
 	target/scala-2.10/wdctools-assembly-1.0.jar
 
 anchortransform:
+	echo done && exit && \
 	spark-submit \
 	--master yarn-master \
 	--deploy-mode client \

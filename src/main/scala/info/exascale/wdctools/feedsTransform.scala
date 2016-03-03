@@ -65,17 +65,22 @@ object feedsTransform {
         case _ => ""
       }
     }
+    val getLCType: (String => String) = (typeString: String) => {
+      typeString.toLowerCase
+    }
 
     val sqlGetHost = udf(getHost)
     val sqlGetRel = udf(getRel)
     val sqlGetHref = udf(getHref)
     val sqlGetTitle = udf(getTitle)
+    val sqlGetLCType = udf(getLCType)
 
     df
       .withColumn("hostname", sqlGetHost(col("page")))
       .withColumn("rel", sqlGetRel(col("tag")))
       .withColumn("href", sqlGetHref(col("tag")))
       .withColumn("title", sqlGetTitle(col("tag")))
+      .withColumn("type", sqlGetLCType(col("type")))
       .write.parquet("/user/vfelder/feeds/feedsparsed.parquet/")
   }
 }
