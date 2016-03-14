@@ -52,7 +52,6 @@ object anchorsDomParsing {
       )
 
     val rowRDD = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
-    //val rowRDD = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/ex_common-crawl_crawl-data_CC-MAIN-2015-48_segments_1448398444047.40_warc_CC-MAIN-20151124205404-00008-ip-10-71-132-137.ec2.internal.warc.gz.json.gz")
         .toJavaRDD
 
     val stillRDD: RDD[Row] = sqlContext.createDataFrame(rowRDD, schema)

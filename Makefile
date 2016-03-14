@@ -2,6 +2,7 @@ assembly:
 	sbt assembly
 
 feedtransform:
+	echo done && exit && \
 	spark-submit \
 	--master yarn-master \
 	--deploy-mode client \
@@ -76,7 +77,7 @@ anchorpagestransform:
 	--master yarn-master \
 	--deploy-mode client \
 	--num-executors 40 \
-	--executor-cores 8 \
+	--executor-cores 6 \
 	--driver-memory 16g \
 	--executor-memory 16g \
 	--conf spark.yarn.executor.memoryOverhead=1024 \
