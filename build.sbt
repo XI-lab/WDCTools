@@ -13,9 +13,10 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
 resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 
+libraryDependencies += "nu.validator.htmlparser" % "htmlparser" % "1.2.1"
 
-libraryDependencies += "org.apache.spark" %% "spark-core" % "1.5.2" % "provided"
-libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.5.2" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-core" % "1.5.2" //% "provided"
+libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.5.2" //% "provided"
 libraryDependencies += "com.netaporter" %% "scala-uri" % "0.4.13"
 
 resolvers += Resolver.sonatypeRepo("public")
