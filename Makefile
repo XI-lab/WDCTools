@@ -70,3 +70,16 @@ anchortransform:
 	--conf spark.ui.port=13341 \
 	--class "info.exascale.wdctools.anchorsTransform" \
 	target/scala-2.10/wdctools-assembly-1.0.jar
+
+anchorpagestransform:
+	spark-submit \
+	--master yarn-master \
+	--deploy-mode client \
+	--num-executors 40 \
+	--executor-cores 8 \
+	--driver-memory 16g \
+	--executor-memory 16g \
+	--conf spark.yarn.executor.memoryOverhead=1024 \
+	--conf spark.ui.port=13341 \
+	--class "info.exascale.wdctools.anchorsDomParsing" \
+	target/scala-2.10/wdctools-assembly-1.0.jar
