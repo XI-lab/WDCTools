@@ -12,10 +12,12 @@ import org.apache.spark.sql._
 
 
 object anchorsDomParsing {
+  val linkPattern = Pattern.compile("<a[^>]* href=[\\\"']?((http|\\/\\/|https){1}([^\\\"'>]){0,20}(\\.m.)?wikipedia\\.[^\\\"'>]{0,5}\\/w(iki){0,1}\\/[^\\\"'>]+)[\"']?[^>]*>(.+?)<\\/a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
+
   def findParentOfText(dom: Node, value: String): NodeSeq = (dom \\ "p").filter(_.text.toLowerCase.contains(value))
 
-  def extractFromHtml(content: String, page: String, pattern: Pattern): Array[Row] = {
-    val pageMatcher: Matcher = pattern.matcher(content)
+  def extractFromHtml(content: String, page: String): Array[Row] = {
+    val pageMatcher: Matcher = linkPattern.matcher(content)
     val dom = HTML5Parser.loadXML(fromString(content))
     var output = List[Row]()
 
@@ -35,13 +37,31 @@ object anchorsDomParsing {
     output.toArray
   }
 
+  def newRows(row: Row): Array[Row] = {
+    val default = Array(Row("", "", "", ""))
+    try {
+      val content = row.get(0)
+      val url = row.get(1)
+      if (content != null && content.toString.length > 0 && url != null && url.toString.length > 0) {
+        println("PARSEOK")
+        extractFromHtml(content.toString, url.toString)
+      } else {
+        println("PARSEFAILED")
+        default
+      }
+    } catch {
+      case _: Throwable => {
+        println("PARSETHREW")
+        default
+      }
+    }
+  }
+
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("AnchorsDomParsing").set("spark.sql.parquet.compression.codec", "snappy")
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
-
-    val linkPattern = Pattern.compile("<a[^>]* href=[\\\"']?((http|\\/\\/|https){1}([^\\\"'>]){0,20}(\\.m.)?wikipedia\\.[^\\\"'>]{0,5}\\/w(iki){0,1}\\/[^\\\"'>]+)[\"']?[^>]*>(.+?)<\\/a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
 
     val schema = StructType(
         StructField("page", StringType, true) :: StructField("href", StringType, true) ::
@@ -49,9 +69,7 @@ object anchorsDomParsing {
       )
 
     val rdd: RDD[Row] = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
-      .map(row => {
-        extractFromHtml(row.getAs("content"), row.getAs("url"), linkPattern)
-      })
+      .map(newRows)
       .flatMap(row => row)
 
       val df = sqlContext.createDataFrame(rdd, schema)
