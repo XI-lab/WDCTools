@@ -3,11 +3,9 @@ package info.exascale.wdctools
 import java.util.regex.{Matcher, Pattern}
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext, sql}
 import scala.xml.{NodeSeq, Node}
 import scala.xml.Source.fromString
-import org.apache.spark.sql.Row
-import org.apache.spark.sql._
 
 
 object anchorsDomParsing {
@@ -15,7 +13,7 @@ object anchorsDomParsing {
 
   def findParentOfText(dom: Node, value: String): NodeSeq = (dom \\ "p").filter(_.text.toLowerCase.contains(value))
 
-  def extractFromHtml(content: String, page: String): Array[Output] = {
+  def extractFromHtml(content: String, page: String): Option[Array[Output]] = {
     val pageMatcher: Matcher = linkPattern.matcher(content)
     val dom = HTML5Parser.loadXML(fromString(content))
     var output = List[Output]()
@@ -27,27 +25,28 @@ object anchorsDomParsing {
       val paragraph = findParentOfText(dom, href.toLowerCase)
       if (paragraph.nonEmpty) {
         output = Output(page, href, link, paragraph.text) :: output
-      } else {
-        output = Output(page, href, link, "") :: output
       }
     }
 
-    output.toArray
+    if (output.nonEmpty) {
+      Some(output.toArray)
+    } else {
+      None
+    }
   }
 
-  def newRows(row: Row): Array[Output] = {
-    val default = Array(Output("", "", "", ""))
+  def newRows(row: sql.Row): Option[Array[Output]] = {
     try {
       val content = row.get(0)
       val url = row.get(1)
       if (content != null && content.toString.length > 0 && url != null && url.toString.length > 0) {
         extractFromHtml(content.toString, url.toString)
       } else {
-        default
+        None
       }
     } catch {
       case _: Throwable => {
-        default
+        None
       }
     }
   }
@@ -55,17 +54,20 @@ object anchorsDomParsing {
   case class Output(page: String, href: String, link: String, paragraph: String)
 
   def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("AnchorsDomParsing").set("spark.sql.parquet.compression.codec", "snappy")
+    val conf = new SparkConf()
+      .setAppName("AnchorsDomParsing")
+      .set("spark.sql.parquet.compression.codec", "snappy")
     val sc = new SparkContext(conf)
-    val sqlContext = new SQLContext(sc)
+    val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
 
-    val df: RDD[Output] = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
+    val df = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
       .map(newRows)
+      .filter(_.isDefined)
+      .map(_.get)
       .flatMap(row => row)
-
-    df
       .toDF()
+      .coalesce(500)
       .write
       .parquet("/user/vfelder/anchorsContext/anchors.parquet/")
 
