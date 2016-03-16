@@ -31,7 +31,6 @@ object anchorsDomParsing {
       } else {
         output = Row(page, href, link, "") :: output
       }
-      output = Row(page, href, link, "paragraph.empty") :: output
     }
 
     output.toArray
@@ -43,15 +42,12 @@ object anchorsDomParsing {
       val content = row.get(0)
       val url = row.get(1)
       if (content != null && content.toString.length > 0 && url != null && url.toString.length > 0) {
-        println("PARSEOK")
         extractFromHtml(content.toString, url.toString)
       } else {
-        println("PARSEFAILED")
         default
       }
     } catch {
       case _: Throwable => {
-        println("PARSETHREW")
         default
       }
     }
@@ -73,7 +69,6 @@ object anchorsDomParsing {
       .flatMap(row => row)
 
       val df = sqlContext.createDataFrame(rdd, schema)
-        .coalesce(1000)
         .write.parquet("/user/vfelder/anchorsContext/anchors.parquet/")
 
   }
