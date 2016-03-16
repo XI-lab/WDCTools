@@ -12,23 +12,23 @@ import org.apache.spark.sql._
 
 
 object anchorsDomParsing {
-//  def findParentOfText(dom: Node, value: String): NodeSeq = (dom \\ "p").filter(_.text.toLowerCase.contains(value))
+  def findParentOfText(dom: Node, value: String): NodeSeq = (dom \\ "p").filter(_.text.toLowerCase.contains(value))
 
   def extractFromHtml(content: String, page: String, pattern: Pattern): Array[Row] = {
     val pageMatcher: Matcher = pattern.matcher(content)
-//    val dom = HTML5Parser.loadXML(fromString(content))
+    val dom = HTML5Parser.loadXML(fromString(content))
     var output = List[Row]()
 
     while (pageMatcher.find) {
       val href = pageMatcher.group(6).replace("\n", " ").replace("\r", " ").replace("\t", " ")
       val link = pageMatcher.group(1).replace("\n", " ").replace("\r", " ").replace("\t", " ")
 
-//      val paragraph = findParentOfText(dom, href.toLowerCase)
-//      if (paragraph.nonEmpty) {
-//        output = Row(page, href, link, paragraph.text) :: output
-//      } else {
-//        output = Row(page, href, link, "") :: output
-//      }
+      val paragraph = findParentOfText(dom, href.toLowerCase)
+      if (paragraph.nonEmpty) {
+        output = Row(page, href, link, paragraph.text) :: output
+      } else {
+        output = Row(page, href, link, "") :: output
+      }
       output = Row(page, href, link, "paragraph.empty") :: output
     }
 
