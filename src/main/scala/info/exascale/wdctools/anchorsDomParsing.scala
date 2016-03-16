@@ -38,7 +38,6 @@ object anchorsDomParsing {
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("AnchorsDomParsing").set("spark.sql.parquet.compression.codec", "snappy")
     val sc = new SparkContext(conf)
-    // val sc = new SparkContext("local", "shell")
     val sqlContext = new SQLContext(sc)
 
     val linkPattern = Pattern.compile("<a[^>]* href=[\\\"']?((http|\\/\\/|https){1}([^\\\"'>]){0,20}(\\.m.)?wikipedia\\.[^\\\"'>]{0,5}\\/w(iki){0,1}\\/[^\\\"'>]+)[\"']?[^>]*>(.+?)<\\/a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
@@ -50,14 +49,13 @@ object anchorsDomParsing {
 
     val rdd: RDD[Row] = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
       .map(row => {
-        val originalColumns = row.toSeq.toList
-        extractFromHtml(originalColumns(0).toString, originalColumns(1).toString, linkPattern)
+        extractFromHtml(row.getAs("content"), row.getAs("url"), linkPattern)
       })
       .flatMap(row => row)
 
       val df = sqlContext.createDataFrame(rdd, schema)
         .coalesce(1000)
-        .write.parquet("/user/vfelder/anchorsContext/anchors1.parquet/")
+        .write.parquet("/user/vfelder/anchorsContext/anchors.parquet/")
 
   }
 }
