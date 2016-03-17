@@ -57,13 +57,13 @@ object anchorsDomParsing {
     val conf = new SparkConf()
       .setAppName("AnchorsDomParsing")
       .set("spark.sql.parquet.compression.codec", "snappy")
-      .set("spark.sql.shuffle.partitions", "50000")
+      .set("spark.sql.shuffle.partitions", "5000")
     val sc = new SparkContext(conf)
     val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
 
     val df = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
-      .repartition(200000)
+      .repartition(100000)
       .map(newRows)
       .filter(_.isDefined)
       .map(_.get)
