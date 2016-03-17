@@ -11,27 +11,34 @@ import scala.xml.Source.fromString
 object anchorsDomParsing {
   val linkPattern = Pattern.compile("<a[^>]* href=[\\\"']?((http|\\/\\/|https){1}([^\\\"'>]){0,20}(\\.m.)?wikipedia\\.[^\\\"'>]{0,5}\\/w(iki){0,1}\\/[^\\\"'>]+)[\"']?[^>]*>(.+?)<\\/a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
 
-  def findParentOfText(dom: Node, value: String): NodeSeq = (dom \\ "p").filter(_.text.toLowerCase.contains(value))
+  def findParentOfText(dom: Node, value: String): NodeSeq = (dom \\ "p").filter(_.toString.toLowerCase.contains(value))
 
   def extractFromHtml(content: String, page: String): Option[Array[Output]] = {
-    val pageMatcher: Matcher = linkPattern.matcher(content)
-    val dom = HTML5Parser.loadXML(fromString(content))
-    var output = List[Output]()
+    try {
+      val pageMatcher: Matcher = linkPattern.matcher(content)
+      val dom = HTML5Parser.loadXML(fromString(content))
+      var output = List[Output]()
 
-    while (pageMatcher.find) {
-      val href = pageMatcher.group(6).replace("\n", " ").replace("\r", " ").replace("\t", " ")
-      val link = pageMatcher.group(1).replace("\n", " ").replace("\r", " ").replace("\t", " ")
+      while (pageMatcher.find) {
+        val href = pageMatcher.group(6).replace("\n", " ").replace("\r", " ").replace("\t", " ")
+        val link = pageMatcher.group(1).replace("\n", " ").replace("\r", " ").replace("\t", " ")
 
-      val paragraph = findParentOfText(dom, href.toLowerCase)
-      if (paragraph.nonEmpty) {
-        output = Output(page, href, link, paragraph.text) :: output
+        val paragraph = findParentOfText(dom, href.toLowerCase)
+        if (paragraph.nonEmpty) {
+          output = Output(page, href, link, paragraph.text) :: output
+        }
+      }
+
+      if (output.nonEmpty) {
+        Some(output.toArray)
+      } else {
+        None
       }
     }
-
-    if (output.nonEmpty) {
-      Some(output.toArray)
-    } else {
-      None
+    catch {
+      case _: Throwable => {
+        None
+      }
     }
   }
 
@@ -55,9 +62,20 @@ object anchorsDomParsing {
 
   def main(args: Array[String]) {
     val conf = new SparkConf()
-      .setAppName("AnchorsDomParsing")
-      .set("spark.sql.parquet.compression.codec", "snappy")
-      .set("spark.sql.shuffle.partitions", "5000")
+    conf.setAppName("AnchorsDomParsing")
+    conf.set("spark.sql.parquet.compression.codec", "snappy")
+    conf.set("spark.sql.shuffle.partitions", "5000")
+    conf.set("spark.rpc.numRetries", "15")
+    conf.set("spark.rpc.retry.wait", "3")
+    conf.set("spark.rpc.askTimeout", "600")
+    conf.set("spark.rpc.lookupTimeout", "600")
+    conf.set("spark.akka.num.retries", "25")
+    conf.set("spark.akka.retry.wait", "3")
+    conf.set("spark.akka.askTimeout", "600")
+    conf.set("spark.akka.lookupTimeout", "600")
+    conf.set("spark.akka.timeout", "600")
+    conf.set("spark.network.timeout", "600")
+
     val sc = new SparkContext(conf)
     val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
