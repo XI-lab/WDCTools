@@ -2,7 +2,6 @@ package info.exascale.wdctools
 
 import java.util.regex.{Matcher, Pattern}
 
-import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext, sql}
 import scala.xml.{NodeSeq, Node}
 import scala.xml.Source.fromString
@@ -64,31 +63,24 @@ object anchorsDomParsing {
     val conf = new SparkConf()
     conf.setAppName("AnchorsDomParsing")
     conf.set("spark.sql.parquet.compression.codec", "snappy")
-    conf.set("spark.sql.shuffle.partitions", "5000")
-    conf.set("spark.rpc.numRetries", "15")
-    conf.set("spark.rpc.retry.wait", "3")
-    conf.set("spark.rpc.askTimeout", "600")
-    conf.set("spark.rpc.lookupTimeout", "600")
-    conf.set("spark.akka.num.retries", "25")
-    conf.set("spark.akka.retry.wait", "3")
-    conf.set("spark.akka.askTimeout", "600")
-    conf.set("spark.akka.lookupTimeout", "600")
-    conf.set("spark.akka.timeout", "600")
-    conf.set("spark.network.timeout", "600")
+    conf.set("spark.sql.sources.partitionColumnTypeInference.enabled", "false")
+    conf.set("spark.sql.shuffle.partitions", "50000")
 
     val sc = new SparkContext(conf)
     val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
 
+    // val df = sqlContext.read.json("./input/*.gz")
     val df = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
       .repartition(100000)
       .map(newRows)
       .filter(_.isDefined)
       .map(_.get)
       .flatMap(row => row)
-      .toDF()
+      .toDF("page", "href", "link", "paragraph")
       .write
-      .parquet("/user/vfelder/anchorsContext/anchors.parquet/")
+      .parquet("/user/vfelder/paragraph/")
+      // .parquet("output")
 
   }
 }
