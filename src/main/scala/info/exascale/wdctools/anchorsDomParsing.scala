@@ -2,9 +2,13 @@ package info.exascale.wdctools
 
 import java.util.regex.{Matcher, Pattern}
 
+import org.apache.spark.sql.Row
 import org.apache.spark.{SparkConf, SparkContext, sql}
-import scala.xml.{NodeSeq, Node}
+
+import scala.xml.{Node, NodeSeq}
 import scala.xml.Source.fromString
+import org.json4s._
+import org.json4s.native.JsonMethods._
 
 
 object anchorsDomParsing {
@@ -27,7 +31,9 @@ object anchorsDomParsing {
           val paragraph = findParentOfText(dom, href.toLowerCase)
           if (paragraph.nonEmpty && paragraph.length > 0) {
             paragraph.foreach(p => {
-              output = Output(page, href, link, paragraph.text) :: output
+              if (p.text.nonEmpty) {
+                output = Output(page.toString, href.toString, link.toString, paragraph.text) :: output
+              }
             })
           }
         }
@@ -48,8 +54,8 @@ object anchorsDomParsing {
 
   def newRows(row: sql.Row): Option[Array[Output]] = {
     try {
-      val content = row.get(0)
-      val url = row.get(1)
+      val content = row.getString(0)
+      val url = row.getString(1)
       if (content != null && content.toString.length > 0 && url != null && url.toString.length > 0) {
         extractFromHtml(content.toString, url.toString)
       } else {
@@ -74,16 +80,32 @@ object anchorsDomParsing {
     val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
 
-    // val df = sqlContext.read.json("./input/*.gz")
-    val df = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
+    val lines = sc.textFile("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
+    val jsonParsing = lines
+      .map(line => {
+        parse(line)
+      })
+      .map(json => {
+        implicit lazy val formats = org.json4s.DefaultFormats
+
+        val content = (json \ "content").extract[String]
+        val url = (json \ "url").extract[String]
+        Row(content, url)
+      })
+
+    val newRowsCreated = jsonParsing
       .map(newRows)
+
+    val deoptionize = newRowsCreated
       .filter(_.isDefined)
       .map(_.get)
+
+    val df = deoptionize
       .flatMap(row => row)
       .toDF("page", "href", "link", "paragraph")
+
+    df
       .write
       .parquet("/user/vfelder/paragraph/")
-      // .parquet("output")
-
   }
 }
