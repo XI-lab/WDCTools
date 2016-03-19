@@ -19,12 +19,17 @@ object anchorsDomParsing {
       var output = List[Output]()
 
       while (pageMatcher.find) {
-        val href = pageMatcher.group(6).replace("\n", " ").replace("\r", " ").replace("\t", " ")
-        val link = pageMatcher.group(1).replace("\n", " ").replace("\r", " ").replace("\t", " ")
-
-        val paragraph = findParentOfText(dom, href.toLowerCase)
-        if (paragraph.nonEmpty) {
-          output = Output(page, href, link, paragraph.text) :: output
+        val hrefGroup = pageMatcher.group(6)
+        val linkGroup = pageMatcher.group(1)
+        if (hrefGroup != null && linkGroup != null) {
+          val href = hrefGroup.replace("\n", " ").replace("\r", " ").replace("\t", " ")
+          val link = linkGroup.replace("\n", " ").replace("\r", " ").replace("\t", " ")
+          val paragraph = findParentOfText(dom, href.toLowerCase)
+          if (paragraph.nonEmpty && paragraph.length > 0) {
+            paragraph.foreach(p => {
+              output = Output(page, href, link, paragraph.text) :: output
+            })
+          }
         }
       }
 
@@ -64,7 +69,6 @@ object anchorsDomParsing {
     conf.setAppName("AnchorsDomParsing")
     conf.set("spark.sql.parquet.compression.codec", "snappy")
     conf.set("spark.sql.sources.partitionColumnTypeInference.enabled", "false")
-    conf.set("spark.sql.shuffle.partitions", "50000")
 
     val sc = new SparkContext(conf)
     val sqlContext = new sql.SQLContext(sc)
@@ -72,7 +76,6 @@ object anchorsDomParsing {
 
     // val df = sqlContext.read.json("./input/*.gz")
     val df = sqlContext.read.json("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
-      .repartition(100000)
       .map(newRows)
       .filter(_.isDefined)
       .map(_.get)
