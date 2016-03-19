@@ -75,12 +75,18 @@ object anchorsDomParsing {
     conf.setAppName("AnchorsDomParsing")
     conf.set("spark.sql.parquet.compression.codec", "snappy")
     conf.set("spark.sql.sources.partitionColumnTypeInference.enabled", "false")
+    conf.set("spark.shuffle.consolidateFiles", "false")
+    conf.set("spark.shuffle.manager", "sort")
+    conf.set("spark.shuffle.service.enable", "true")
+    conf.set("spark.akka.askTimeout", "700")
+    conf.set("spark.core.connection.ack.wait.timeout", "700")
 
     val sc = new SparkContext(conf)
     val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
 
-    val lines = sc.textFile("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
+    val lines = sc.textFile("/user/atonon/WDC_112015/data/anchor_pages/*.gz", 1000)
+
     val jsonParsing = lines
       .map(line => {
         parse(line)
@@ -105,6 +111,7 @@ object anchorsDomParsing {
       .toDF("page", "href", "link", "paragraph")
 
     df
+      .coalesce(50000)
       .write
       .parquet("/user/vfelder/paragraph/")
   }
