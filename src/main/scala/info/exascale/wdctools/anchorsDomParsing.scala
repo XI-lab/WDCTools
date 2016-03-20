@@ -2,7 +2,7 @@ package info.exascale.wdctools
 
 import java.util.regex.{Matcher, Pattern}
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Row, SaveMode}
 import org.apache.spark.{SparkConf, SparkContext, sql}
 
 import scala.xml.{Node, NodeSeq}
@@ -77,15 +77,14 @@ object anchorsDomParsing {
     conf.set("spark.sql.sources.partitionColumnTypeInference.enabled", "false")
     conf.set("spark.shuffle.consolidateFiles", "false")
     conf.set("spark.shuffle.manager", "sort")
-    conf.set("spark.shuffle.service.enable", "true")
-    conf.set("spark.akka.askTimeout", "700")
-    conf.set("spark.core.connection.ack.wait.timeout", "700")
+    //conf.set("spark.shuffle.service.enable", "true")
+    conf.set("spark.akka.heartbeat.interval", "100")
 
     val sc = new SparkContext(conf)
     val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
 
-    val lines = sc.textFile("/user/atonon/WDC_112015/data/anchor_pages/*.gz", 1000)
+    val lines = sc.textFile("/user/atonon/WDC_112015/data/anchor_pages/*.gz", 500000)
 
     val jsonParsing = lines
       .map(line => {
@@ -102,17 +101,16 @@ object anchorsDomParsing {
     val newRowsCreated = jsonParsing
       .map(newRows)
 
-    val deoptionize = newRowsCreated
+    val deoptionized = newRowsCreated
       .filter(_.isDefined)
       .map(_.get)
 
-    val df = deoptionize
+    val df = deoptionized
       .flatMap(row => row)
       .toDF("page", "href", "link", "paragraph")
 
     df
-      .coalesce(50000)
-      .write
+      .write.mode(SaveMode.Overwrite)
       .parquet("/user/vfelder/paragraph/")
   }
 }
