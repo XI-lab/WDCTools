@@ -84,7 +84,7 @@ object anchorsDomParsing {
     val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
 
-    val lines = sc.textFile("/user/atonon/WDC_112015/data/anchor_pages/*.gz", 500000)
+    val lines = sc.textFile("/user/vfelder/anchor_many_pages/*.bz2", 500000)
 
     val jsonParsing = lines
       .map(line => {
