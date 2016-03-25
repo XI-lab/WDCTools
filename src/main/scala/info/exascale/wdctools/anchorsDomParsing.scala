@@ -14,11 +14,11 @@ import scala.collection.JavaConverters._
 object anchorsDomParsing {
   val linkPattern = Pattern.compile("<a[^>]* href=[\\\"']?((http|\\/\\/|https){1}([^\\\"'>]){0,20}(\\.m.)?wikipedia\\.[^\\\"'>]{0,5}\\/w(iki){0,1}\\/[^\\\"'>]+)[\"']?[^>]*>(.+?)<\\/a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
 
-  def extractFromHtml(content: String, page: String): Option[Array[Output]] = {
+  def extractFromHtml(content: String, page: String): Option[Array[(String, String, String, String)]] = {
     try {
       val pageMatcher: Matcher = linkPattern.matcher(content)
       val paragraphs = Jsoup.parse(content).getElementsByTag("p").asScala
-      var output = List[Output]()
+      var output = List[(String, String, String, String)]()
 
       while (pageMatcher.find) {
         val hrefGroup = pageMatcher.group(6)
@@ -28,7 +28,7 @@ object anchorsDomParsing {
           val link = linkGroup.replace("\n", " ").replace("\r", " ").replace("\t", " ")
           paragraphs.foreach(paragraph => {
             if (paragraph.html().toLowerCase.contains(href)) {
-              output = Output(page.toString, href, link.toString, paragraph.html()) :: output
+              output = (page.toString, href, link.toString, paragraph.html()) :: output
             }
           })
         }
@@ -47,7 +47,7 @@ object anchorsDomParsing {
     }
   }
 
-  def newRows(row: sql.Row): Option[Array[Output]] = {
+  def newRows(row: sql.Row): Option[Array[(String, String, String, String)]] = {
     try {
       val content = row.getString(0)
       val url = row.getString(1)
@@ -68,7 +68,6 @@ object anchorsDomParsing {
   link: https://en.wikipedia.org/wiki/Something
   paragraph: lala<span><a href="...
    */
-  case class Output(page: String, href: String, link: String, paragraph: String)
 
   def main(args: Array[String]) {
     val conf = new SparkConf()
@@ -78,13 +77,13 @@ object anchorsDomParsing {
     conf.set("spark.shuffle.consolidateFiles", "false")
     conf.set("spark.shuffle.manager", "sort")
     conf.set("spark.shuffle.service.enable", "true")
-    conf.set("spark.akka.heartbeat.interval", "100")
+    conf.set("spark.executor.heartbeatInterval", "5")
 
     val sc = new SparkContext(conf)
     val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
 
-    val lines = sc.textFile("/user/atonon/WDC_112015/data/anchor_pages/*.gz")
+    val lines = sc.textFile("/user/vfelder/anchor_pages_input/*.gz")
     // val lines = sc.textFile("input/*.gz")
 
     val jsonParsing = lines
