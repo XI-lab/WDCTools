@@ -1,6 +1,7 @@
 organization := "info.exascale"
 name := "wdctools"
 scalaVersion := "2.10.5"
+ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 version := "1.0"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
@@ -13,6 +14,7 @@ libraryDependencies += "org.apache.spark" %% "spark-core" % "1.5.2" % "provided"
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "1.5.2" % "provided"
 libraryDependencies += "com.netaporter" %% "scala-uri" % "0.4.13"
 libraryDependencies += "org.json4s" %% "json4s-native" % "3.3.0"
+libraryDependencies += "org.jsoup" % "jsoup" % "1.8.3"
 
 
 resolvers += Resolver.sonatypeRepo("public")
