@@ -107,7 +107,7 @@ object anchorsTweetParsing {
     val df = deoptionized
       .flatMap(row => row)
       //.saveAsTextFile("output")
-      .toDF("page", "href", "url", "query")
+      .toDF("page", "url", "query")
 
     df.write
       .parquet("/user/vfelder/anchor_twitter/")
