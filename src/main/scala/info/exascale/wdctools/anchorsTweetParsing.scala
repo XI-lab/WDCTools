@@ -13,7 +13,7 @@ import scala.collection.mutable.ListBuffer
 object anchorsTweetParsing {
   case class Output(page: String, url: String, query: String)
 
-  val tweetPattern = Pattern.compile("https?:\\/\\/(www\\.)?twitter.com\\/([^\\s\"'#])*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
+  val tweetPattern = Pattern.compile("https?:\\/\\/(www\\.)?twitter.com\\/([^\\s\"'#]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
 
   def extractFromHtml(content: String, page: String): Option[Seq[Output]] = {
     try {
