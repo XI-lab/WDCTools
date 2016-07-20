@@ -85,7 +85,6 @@ anchorpagestransform:
 	--class info.exascale.wdctools.datatransform.anchorsDomParsing \
 	target/scala-2.10/wdctools-assembly-1.0.jar
 
-
 anchortweetparsing:
 	spark-submit \
 	--master yarn-master \
@@ -98,3 +97,14 @@ anchortweetparsing:
 	--conf spark.ui.port=17347 \
 	--class info.exascale.wdctools.datatransform.anchorsTweetParsing \
 	target/scala-2.10/wdctools-assembly-1.0.jar
+
+triples_parquet: target/scala-2.10/wdctools-assembly-1.0.jar
+	spark-submit --master yarn \
+	--deploy-mode client \
+	--num-executors 20 \
+	--driver-memory 2g --executor-memory 4g \
+	--conf "spark.yarn.executor.memoryOverhead=2048" \
+	--class info.exascale.wdctools.datatransform.triplesToParquet \
+	target/scala-2.10/wdctools-assembly-1.0.jar \
+	<input basename> \
+	<output dir>
