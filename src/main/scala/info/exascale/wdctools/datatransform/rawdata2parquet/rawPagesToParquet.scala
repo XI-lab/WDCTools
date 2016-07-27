@@ -25,7 +25,6 @@ object rawPagesToParquet {
 
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
-    import sqlContext.implicits._
 
     val rawPagesDir = args(0)
     val outputDir = args(1)
@@ -34,4 +33,5 @@ object rawPagesToParquet {
 
     rawPages.write.parquet(outputDir)
   }//main
+
 }//rawPagesToParquet

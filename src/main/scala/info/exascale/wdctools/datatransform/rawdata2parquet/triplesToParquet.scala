@@ -20,7 +20,7 @@ import scala.language.postfixOps
   */
 object triplesToParquet {
 
-  val AnnotationPattern = """(\S+)\s+(\S+)\s+(.+)\s+(<[^>]+>)\s+(<[^>]+>)\s+\.""".r
+  val AnnotationPattern = """(\S+)\s+(\S+)\s+(.+)\s+<([^>]+)>\s+(<[^>]+>)\s+\.""".r
 
   case class AnnotationTPD(subject: String, predicate: String, obj: String, url: String, tpd: String, extractor: String)
 
@@ -57,7 +57,7 @@ object triplesToParquet {
     val conf = new SparkConf()
       .setAppName("Triples_to_parquet")
       .set("spark.sql.parquet.compression.codec", "snappy")
-    //      .setMaster("local[*]")
+//      .setMaster("local[*]")
 
     val sc = new SparkContext(conf)
     val triplesFile = args(0)
@@ -67,15 +67,17 @@ object triplesToParquet {
 
     import sqlContext.implicits._
 
-    val triplesRDD = sc.textFile(triplesFile).map {
-        case AnnotationPattern(s, p, o, page, extractor) =>
-          val tpd = getTopPrivateDomain(page.substring(1, page.length - 1))
-          AnnotationTPD(s, p, o, page, tpd, extractor)
-        case badLine =>
-          AnnotationTPD("match_error", "", "", "", "", "")
+    val triplesRDD = sc.textFile(triplesFile, 8).map {
+      case AnnotationPattern(s, p, o, page, extractor) =>
+        val tpd = getTopPrivateDomain(page.substring(1, page.length - 1))
+        AnnotationTPD(s, p, o, page, tpd, extractor)
+      case badLine =>
+        AnnotationTPD("match_error", "", "", "", "", "")
     }.toDF()
 
     triplesRDD.write.parquet(outputFile)
-  }//main_TPD
+  } //main_TPD
 
-}//TriplesToParquet
+}
+
+//TriplesToParquet
