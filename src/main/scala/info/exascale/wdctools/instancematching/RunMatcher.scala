@@ -24,17 +24,17 @@ object RunMatcher {
     val conf = new SparkConf()
       .setAppName("TransformFeeds")
       .set("spark.sql.parquet.compression.codec", "snappy") // snappy compression for parquet
-      .setMaster("local[*]")
+//      .setMaster("local[*]")
 
     val sc = new SparkContext(conf)
     val sqlContext = new sql.SQLContext(sc)
     import sqlContext.implicits._
 
 
-    val pagesDatasetPath = "/Users/alberto/Documents/Projects/Voldemort/Datasets/raw_pages.parquet" //args(0)
-    val triplesDatasetPath = "/Users/alberto/Documents/Projects/Voldemort/Datasets/test_imfw_annotations.parquet" //args(1)
-    val wikipediaLinks = "/Users/alberto/Documents/Projects/Voldemort/Datasets/test_imfw_wikianchors.parquet" //args(2)
-    val outputBasename = "test_output" //args(3)
+    val pagesDatasetPath = args(0)
+    val triplesDatasetPath = args(1)
+    val wikipediaLinks = args(2)
+    val outputBasename = args(3)
 
 
     //TODO: this is ugly!

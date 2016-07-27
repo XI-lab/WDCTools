@@ -1,4 +1,4 @@
-package info.exascale.wdctools.datatransform
+package info.exascale.wdctools.datatransform.rawdata2parquet
 
 import java.net.URL
 
@@ -22,7 +22,7 @@ object triplesToParquet {
 
   val AnnotationPattern = """(\S+)\s+(\S+)\s+(.+)\s+(<[^>]+>)\s+(<[^>]+>)\s+\.""".r
 
-  case class AnnotationTPD(subject: String, predicate: String, obj: String, pageUrl: String, tpd: String, extractor: String)
+  case class AnnotationTPD(subject: String, predicate: String, obj: String, url: String, tpd: String, extractor: String)
 
   def getTopPrivateDomain(urlStr: String): String = {
     var url: URL = null
