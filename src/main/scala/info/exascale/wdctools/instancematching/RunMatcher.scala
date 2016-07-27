@@ -9,6 +9,27 @@ import scala.collection.mutable.ListBuffer
 
 /**
   * Created by alberto on 20/07/16.
+  * Runs an instance matching algorithm on the Voldemort dataset.
+  * Instance matching algorithms must implement the InterPageMatchingStrategy
+  * trait. You can then replace the content of the line marked with
+  * *** put here an instance of your favourite matcher *** with
+  * an instantiation of your class.
+  *
+  * The scripts produces a set of semantic annotations
+  * (subject, predicate, object, pageUrl)
+  * composing the knowledge base created by applying the instance matching algorithm.
+  *
+  * Command line ariguments of the script are:
+  * - path to the directory containing the Web Pages dataset converted into snappy+parquet
+  * - path to the directory containing the Schema.org Annotations dataset converted into snappy+parquet
+  * - path to the directory containing the Wikipedia Links dataset converted into snappy+parquet
+  * - path of the directory where to store the output of the script.
+  *
+  * To convert the files downloadable from http://voldemort.exascale.info into snappy+parquet
+  * you can use the scripts contained in the info.exascale.wdctools.datatransform.rawdata2parquet
+  * package.
+  *
+  * Good luck :-)
   */
 object RunMatcher {
 
@@ -17,7 +38,7 @@ object RunMatcher {
       val Array(s, p, o) = line.split("\t")
       (s, p, o)
     }
-  }
+  }//triplesFromString
 
   def main(args: Array[String]): Unit = {
 
@@ -49,16 +70,13 @@ object RunMatcher {
           val (s, p, o) = (row.getAs[String]("subject"), row.getAs[String]("predicate"), row.getAs[String]("obj"))
           acc ++= s"\n$s\t$p\t$o"
         } //fold
-        // remove < and > from page URL
-        //TODO: keep this line?
-        //        pageUrl.substring(1, pageUrl.length - 1).trim -> tmp.result().trim
         pageUrl -> tmp.result().trim
-      }.toDF("url", "triples_str") // a datafrane (url [(subject, predicate, obj)])
+      }.toDF("url", "triples_str") // a datafrane (url, triples as a string)
 
-    // url, content
+    // schema: (url, content)
     val pages = sqlContext.read.parquet(pagesDatasetPath)
 
-    // url, anchorText, wikiUrl
+    //schema: (url, [wikilink])
     val wikilinks = sqlContext.read.parquet(wikipediaLinks).select("url", "wikiLink").rdd.
       groupBy(r => r.getAs[String]("url")).
       map { case (url, items) =>
@@ -67,12 +85,12 @@ object RunMatcher {
           acc += row.getAs[String]("wikiLink")
         } //fold
         url -> tmp.result()
-      }.toDF("url", "wikilinks") // a dataframe (url, [wikilink])
+      }.toDF("url", "wikilinks") // a dataframe
 
-    // (url, content, triples, wikilinks)
+    // schema: (url, content, triples, wikilinks)
     val pagesAndTriples = pages.join(triplesByPage, "url").join(wikilinks, "url")
 
-    //    pagesAndTriples.write.mode(SaveMode.Overwrite).parquet(outputBasename)
+    // schema: (pageUrl, localEntityUri, dbPediaUri)
     val mappings = pagesAndTriples.mapPartitions { rowItr =>
       // *** put here an instance of your favourite matcher ***
       val matcher: InterPageMatchingStrategy = new NameExactMatch("diuflx75", 6379, 1)
@@ -82,30 +100,25 @@ object RunMatcher {
           triplesFromString(row.getAs[String]("triples_str")),
           row.getAs[Seq[String]]("wikilinks"))
       }
-    }.toDF() // a dataframe (pageUrl: String, localEntityUri: String, dbPediaUri: String)
+    }.toDF()
 
-    //    mappings.write.mode(SaveMode.Overwrite).parquet(outputBasename)
-
-    //     subject, predicate, obj, pageUrl, tpd, extractor
+    // schema: (url, subject, predicate, obj)
     val originalTriples = sqlContext.read.parquet(triplesDatasetPath).
       select("url", "subject", "predicate", "obj")
 
     // substitutes all local urls with their DBpedia equivalent
-    // subject, predicate, obj, pageUrl, dbPediaUri
+    // schema: subject, predicate, obj, triplePageUrl, dbPediaUri
     val subjectSubstituted = mappings.join(originalTriples,
       mappings("pageUrl") === originalTriples("url") &&
         mappings("localEntityUri") === originalTriples("subject")).
       drop("subject").drop("localEntityUri").
       withColumnRenamed("dbPediaUri", "subject").
-      withColumnRenamed("pageUrl", "triplePageUrl")
-
-//    subjectSubstituted.write.mode(SaveMode.Overwrite).parquet(outputBasename)
+      withColumnRenamed("pageUrl", "triplePageUrl") // have to rename this otherwise later we get an "ambiguous column" error
 
     val substituteObj = udf((obj: String, dbpediaEnt: String) => dbpediaEnt match {
       case null => obj
       case _ => dbpediaEnt
     })
-
 
     val subjObjSubstituted = mappings.join(subjectSubstituted,
       mappings("pageUrl") === subjectSubstituted("triplePageUrl") &&
